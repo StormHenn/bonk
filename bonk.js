@@ -30,7 +30,7 @@ let DEV = false;
 
 function emptyState() {
   return {
-    config: { timezone: 'America/New_York', secret: crypto.randomBytes(32).toString('hex'), retroEvery: 7 },
+    config: { timezone: 'America/New_York', secret: crypto.randomBytes(32).toString('hex'), retroEvery: 7, milestonesV2: true },
     users: [],
     boundaries: [],
     tiers: SEED_TIERS.map((t) => ({ id: newId(), ...t })),
@@ -56,7 +56,25 @@ function migrate() {
   db.config.retroEvery ||= 7;
   for (const b of db.bonks) b.type ||= 'crossed'; // every bonk before types existed was a crossing
   db.best ??= Math.max(0, ...db.unlocks.map((u) => u.day));
+
+  // Once: an app set up with the first version's default rewards gets the new default
+  // milestones, as long as nobody changed that list or redeemed anything from it.
+  if (!db.config.milestonesV2) {
+    db.config.milestonesV2 = true;
+    const tiers = [...db.tiers].sort((a, b) => a.day - b.day);
+    const untouched = tiers.length === FIRST_SEED.length && tiers.every((t, i) => t.day === FIRST_SEED[i][0] && t.reward === FIRST_SEED[i][1]);
+    if (untouched && !db.unlocks.some((u) => u.redeemed)) {
+      db.tiers = SEED_TIERS.map((t) => ({ id: newId(), ...t }));
+      db.unlocks = [];
+      db.proposals = db.proposals.filter((p) => !(p.target === 'tier' && p.status === 'pending'));
+      if (db.users.length) syncUnlocks(); // unlock whatever the current streak has already reached
+    }
+  }
 }
+
+// The default rewards in the first version of bonk, as [day, reward].
+const FIRST_SEED = [[3, 'a kind text, allowed'], [10, 'coffee together'], [21, 'a walk together'], [35, 'a movie together'],
+  [50, 'dinner out'], [75, 'a full day together'], [100, "sit down and decide what's next"]];
 
 function newId() {
   return crypto.randomBytes(5).toString('hex');
@@ -751,6 +769,7 @@ async function handle({ method, path, cookie: cookieHeader, https, body: raw }, 
     for (let attempt = 0; attempt < 5; attempt++) {
       const loaded = await storage.load();
       db = loaded.data ?? emptyState();
+      const stored = loaded.data ? JSON.stringify(db) : null;
       migrate();
       const before = JSON.stringify(db);
 
@@ -770,7 +789,9 @@ async function handle({ method, path, cookie: cookieHeader, https, body: raw }, 
         result = { error: err.message };
       }
 
-      const changed = method === 'POST' && JSON.stringify(db) !== before;
+      // Save whatever a POST changed. Also save once when a migration changed saved data,
+      // even on a GET, so anything it created (like new ids) stays the same next time.
+      const changed = method === 'POST' ? JSON.stringify(db) !== (stored ?? before) : stored !== null && before !== stored;
       if (!changed || await storage.save(db, loaded.version)) return { status, body: result, cookie: setCookie };
     }
     fail(409, 'Someone else was saving at the same moment. Try again.');
