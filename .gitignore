@@ -1,0 +1,6 @@
+data.json
+data.dev.json
+*.tmp
+node_modules
+.DS_Store
+.netlify

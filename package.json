@@ -1,0 +1,16 @@
+{
+  "name": "bonk",
+  "private": true,
+  "version": "1.0.0",
+  "description": "A tiny two-person streak tracker for keeping boundaries.",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "DEV=1 DATA_FILE=data.dev.json node --watch server.js"
+  },
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "@netlify/blobs": "^11.1.9"
+  }
+}

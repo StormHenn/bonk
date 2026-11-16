@@ -1,0 +1,11 @@
+# bonk on Netlify: public/ is the site, netlify/functions/api.mjs answers /api/*.
+# There's no build step. Netlify only installs @netlify/blobs for the function.
+
+[build]
+  publish = "public"
+
+[build.environment]
+  NODE_VERSION = "24"
+
+[functions]
+  directory = "netlify/functions"
