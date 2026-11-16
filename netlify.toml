@@ -9,3 +9,9 @@
 
 [functions]
   directory = "netlify/functions"
+
+# So phones recognise the install manifest.
+[[headers]]
+  for = "/manifest.webmanifest"
+  [headers.values]
+    Content-Type = "application/manifest+json"

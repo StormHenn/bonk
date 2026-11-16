@@ -1,7 +1,8 @@
 # bonk
 
 A tiny private app for two people keeping their boundaries. Every day you both
-check in, the streak grows, and rewards unlock along the way.
+check in, the streak grows, and milestones unlock along the way. There's also a
+daily question, a truth box, a weekly retro and a wall for the good stuff.
 
 No build step and no database. All state is one JSON document: `data.json` when
 you run it yourself, or a single Netlify Blobs entry when it's on Netlify.
@@ -37,13 +38,26 @@ Each person picks their own 4-digit PIN the first time they log in.
 ## The rules (all in `bonk.js`)
 
 - A day counts when **both** people check in. A missed day doesn't count, but nothing resets.
-- The streak is never stored. `streak()` rebuilds it from check-ins and bonks every time.
-- **Owning a slip** drops the streak to the start of the tier *before* the one you're on
-  (at day 25 with tiers 10 and 21 reached, that's day 10). See `selfReportResetTo()`.
-- **Being called out** drops it to 0.
-- After a bonk, the other person has to acknowledge it before check-ins resume, and the day of the bonk doesn't count.
-- Rewards unlock when the streak reaches them and lock again if a bonk drops the streak below them. Saved memories stay.
-- Boundaries and rewards only change through proposals the other person approves.
+- The streak is never stored. `streak()` rebuilds it from check-ins and crossings every time.
+- A bonk is one of four kinds: a crossing, a near miss, an emotional setback or a misunderstanding.
+  **Only a crossing resets the streak.** The others are logged so you can talk about them.
+- **Owning a crossing** drops the streak to the start of the milestone *before* the one you're on
+  (at day 25 with milestones 10 and 20 reached, that's day 10). See `selfReportResetTo()`.
+- **Calling out a crossing** resets nothing until the other person answers. If they agree, the streak
+  drops to 0. If they see it differently, it's logged as a near miss or a misunderstanding instead.
+- After a crossing, check-ins pause until it's been read or answered, and that day doesn't count.
+- **Asking for space** never touches the streak. Only the person who asked can end it, and it ends
+  by itself the day after their check-back day.
+- Milestones unlock when the streak reaches them and lock again if a crossing drops the streak below them. Saved memories stay.
+- Truth box prompts open at days 10, 30, 60 and 90 of your *best* streak, so a crossing never closes them again.
+- Boundaries, milestones and the retro schedule only change through proposals the other person approves.
+
+## What stays private
+
+- Private check-in notes and truth box drafts are never sent to the other person's phone, and never go in the shared timeline.
+- Daily question and retro answers stay hidden until you've both answered.
+- "Private" means bonk won't show it to the other person. It isn't encrypted: anyone who can read
+  `data.json` or the Netlify Blobs store can read everything in it.
 
 ## Hosting on Netlify (free)
 
